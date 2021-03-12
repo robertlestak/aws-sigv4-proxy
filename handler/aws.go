@@ -17,6 +17,7 @@ package handler
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
@@ -49,11 +50,26 @@ func init() {
 	}
 }
 
+// ambShim is a temporary shim to support AMB ethereum endpoints
+// this should be refactored and removed
+func ambShim(host string) *endpoints.ResolvedEndpoint {
+	if strings.Contains(host, ".managedblockchain.") {
+		re := regexp.MustCompile(".*.managedblockchain.(.*?).amazonaws.com")
+		res := re.FindStringSubmatch(host)
+		region := res[1]
+		return &endpoints.ResolvedEndpoint{URL: fmt.Sprintf("https://%s", host), SigningMethod: "v4", SigningRegion: region, SigningName: "managedblockchain", PartitionID: "aws"}
+	}
+	return nil
+}
+
 func determineAWSServiceFromHost(host string) *endpoints.ResolvedEndpoint {
 	for endpoint, service := range services {
 		if host == endpoint {
 			return &service
 		}
+	}
+	if amb := ambShim(host); amb != nil {
+		return amb
 	}
 	return nil
 }

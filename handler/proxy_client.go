@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/aws/signer/v4"
+	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,12 +35,12 @@ type Client interface {
 
 // ProxyClient implements the Client interface
 type ProxyClient struct {
-	Signer *v4.Signer
-	Client Client
+	Signer              *v4.Signer
+	Client              Client
 	StripRequestHeaders []string
 	SigningNameOverride string
-	HostOverride string
-	RegionOverride string
+	HostOverride        string
+	RegionOverride      string
 }
 
 func (p *ProxyClient) sign(req *http.Request, service *endpoints.ResolvedEndpoint) error {
@@ -112,7 +112,7 @@ func (p *ProxyClient) Do(req *http.Request) (*http.Response, error) {
 	if p.SigningNameOverride != "" && p.RegionOverride != "" {
 		service = &endpoints.ResolvedEndpoint{URL: fmt.Sprintf("https://%s", proxyURL.Host), SigningMethod: "v4", SigningRegion: p.RegionOverride, SigningName: p.SigningNameOverride}
 	} else {
-		service = determineAWSServiceFromHost(req.Host)
+		service = determineAWSServiceFromHost(proxyURL.Host)
 	}
 	if service == nil {
 		return nil, fmt.Errorf("unable to determine service from host: %s", req.Host)
